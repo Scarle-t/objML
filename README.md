@@ -59,7 +59,7 @@ User Interface | Storyboard
     - Type ``` pod init``` to initiate CocoaPods
     - After it has finished, type ```nano Podfile``` to open the Podfile Cocoapods created during initialzation
     - Terminal window will change to nano editor, copy and paste the following under the line ``` # Pods for ...```
-    ```
+    ```Ruby
     pod 'Firebase/Analytics'
     pod 'Firebase/MLVision'
     pod 'Firebase/MLVisionLabelModel'
