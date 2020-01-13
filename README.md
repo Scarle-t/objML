@@ -1,6 +1,8 @@
 # objML
 **This Project contains basic *Proof-of-concept* code with Google ML Kit Vision API, demonstrating how Object Detection/ Tracking and Image Labeling can be implemented together**
 
+*Some files are intentionally left out, this only contains the code of the app*
+
 # Preparation
 **Hardware**
 - device with macOS (iMac, Macbook)
