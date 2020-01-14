@@ -65,4 +65,10 @@
      ```
    - Select the model file to see what is the input and output
      - However, CVPixelBuffer is used in image-based model, passing an Image directly into the model resulting in errors
-     - So we will focus on the 
+   - For image-based model, the predictions are as follows
+   
+   Type | Data
+   ----- | -----
+   Input | Image (CVPixelBuffer, 224x224 Color image)
+   Output | Probability (String -> Double)
+   Output | Label (Category trained previously)
