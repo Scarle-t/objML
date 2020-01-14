@@ -20,8 +20,8 @@
 - Model Training
     1. First install virtual environment
        1. Open Terminal, type `pip install virtualenv`
-          - In some case, it will show 'Permission denied'. Run `sudo npm install` instead
-          - If Terminal returns pip is not install, run `sudo easy_install pip`
+          - In some case, it will show 'Permission denied'. Run `sudo pip install virtualenv` instead
+          - If Terminal returns pip is not install, run `sudo easy_install pip` first
        1. Once completed, run `cd ~` following with `virtualenv venv` to create the virtual environment
        1. Then run `source ~/venv/bin/activate` to start the virtual environment
        1. Terminal will become this
@@ -44,7 +44,7 @@
    - Run `node download-imagenet-files '*link*' *category*`
      - *link*: The ImageNet URL copied beofre
      - *category* Training category created by yourself
-     - e.g.: `node download-imagenet-files.js 'http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=n03376595' hotdog`
+     - e.g.: `node download-imagenet-files.js 'http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=n03376595' chair`
    - Wait for the download and repeat the step for false images (non-chair), category name needs to be different
 
 - Create Core ML Model
