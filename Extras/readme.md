@@ -1,7 +1,7 @@
  # Train model with Apple Turi Create
   iOS app can utilize Core ML to update model on the fly, however it still need a starting ground. This readme will demonstrate how to create a model and how to use in XCode.
   
-***Note: This readme is WIP, it will be actively updated.***
+***Note: This readme is WIP, it will be actively updated. Things will be changed and sample projects may appear here***
 
 # Preparation
 *Software*
