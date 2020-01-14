@@ -59,7 +59,7 @@
      ![](https://i.imgur.com/3rh9EUy.png)
      ![](https://i.imgur.com/uJZuLkX.png)
    - Select the model in XCode, a Class should be automatically generated
-     - It includes multiple predict functions, we will focus on 
+     - It includes multiple prediction functions, we will focus on 
      ```swift 
      func prediction(image: CVPixelBuffer) throws -> ClassifierOutput
      ```
