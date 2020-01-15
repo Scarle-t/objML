@@ -10,6 +10,8 @@
 import UIKit
 /// Library for AVCaptureSession and related Classes, Swift
 import AVFoundation
+///Library for Core ML model predictions
+import CoreML
 
 /// Library for Vision API, install through Cocoapods, Third-party
 import Firebase
@@ -24,12 +26,14 @@ class ViewController: UIViewController,
     /// DispatchQueue, just like Thread
     let queue = DispatchQueue(label: "video-frame-sampler")
     
+    let model = Classifier()
+    
     let screenBound = UIScreen.main.bounds
     let highlightView = UIView()
     
     //MARK: VAR
     /// AVFoundation stuff
-    var prevLayer: AVCaptureVideoPreviewLayer!
+//    var prevLayer: AVCaptureVideoPreviewLayer!
     var session: AVCaptureSession!
     var device: AVCaptureDevice?
     var input: AVCaptureDeviceInput?
@@ -43,9 +47,13 @@ class ViewController: UIViewController,
     var currentTrackingID = -1
     var hightlighting = false
     var boundRatio = CGFloat.zero
+    var switchState = false
     
     //MARK: -
     //MARK: - IBOUTLET
+    @IBOutlet weak var modelSwitch: UISwitch!
+    @IBOutlet weak var coreMLresult: UILabel!
+    @IBOutlet weak var camview: UIImageView!
     
     
     //MARK: - IBACTION
@@ -62,59 +70,80 @@ class ViewController: UIViewController,
         let ciimage : CIImage = CIImage(cvPixelBuffer: imageBuffer)
         let imagei : UIImage = self.convert(cmage: ciimage)
         
-        /// Create a Google Vision API -compitable Image Format
-        let image = VisionImage(image: imagei)
+        DispatchQueue.main.async {
+            self.camview.image = imagei
+            self.switchState = self.modelSwitch.isOn
+        }
         
-        ///Object Detection and Tracking - onDevice Vision API
-        objectDetector.process(image) { detectedObjects, error in
-            /// Error
-            guard error == nil else { return }
-            
-            /// Not Detected, either object nolonger in sight or no recognizable object detected
-            guard let detectedObjects = detectedObjects, !detectedObjects.isEmpty else {
-                print("Not detected")
-                self.hightlighting = false
+        if switchState{
+            DispatchQueue.main.async {
                 self.highlightView.alpha = 0
-                return
+                self.coreMLresult.alpha = 1
             }
+            let cropped = cropImageToBars(image: imagei)
+            let b = buffer(from: cropped)!
+            do{
+                let predict = try model.prediction(image: b)
+                DispatchQueue.main.async {
+                    self.coreMLresult.text = "Label: \(predict.label)\ncofidence: \( predict.labelProbability[predict.label]!)"
+                }
+            }catch{
+                print(error)
+            }
+        }else{
+            DispatchQueue.main.async {
+                self.coreMLresult.alpha = 0
+            }
+            /// Create a Google Vision API -compitable Image Format
+            let image = VisionImage(image: imagei)
             
-            /// Object Found, perform bounding box drawing and give it label information
-            print("detected")
-            for obj in detectedObjects {
-                let bounds = obj.frame
+            ///Object Detection and Tracking - onDevice Vision API
+            objectDetector.process(image) { detectedObjects, error in
+                /// Error
+                guard error == nil else { return }
                 
-                /// Perform bounding box resize
-                let ratio = self.boundRatio * (bounds.height / bounds.width)
-                let widthX = bounds.width * ratio
-                let widthY = widthX * ratio * (bounds.height / bounds.width)
-                let frameBound = CGRect(x: bounds.minX * ratio,
-                                        y: bounds.minY * ratio,
-                                        width: widthX,
-                                        height: widthY)
-                
-                self.highlightView.frame = frameBound
-                if !self.hightlighting{
-                    self.highlightView.alpha = 0.4
-                    self.hightlighting = true
+                /// Not Detected, either object nolonger in sight or no recognizable object detected
+                guard let detectedObjects = detectedObjects, !detectedObjects.isEmpty else {
+                    print("Not detected")
+                    self.hightlighting = false
+                    self.highlightView.alpha = 0
+                    return
                 }
                 
-                /// Check for repeating object, skip labeler to save energy if same object in frame
-                let trackingID = Int(truncating: obj.trackingID!)
-                if self.currentTrackingID != trackingID {
-                    print("Running Labeler for ID \(trackingID)")
-                    /** Labeler - onDevice Vision API
-                     currently listing all results from onDevice Labeler for debug purpose,
-                     can switch to Cloud Vision API for more accurate label (Cost money)
-                    */
-                    let labeler = Vision.vision().onDeviceImageLabeler()
-                    labeler.process(image) { labels, error in
-                        guard error == nil, let labels = labels else { return }
-                        self.lbl.frame.origin.x = self.highlightView.frame.minX
-                        self.lbl.frame.origin.y = self.highlightView.frame.minY
-                        self.lbl.text = labels.first?.text
+                /// Object Found, perform bounding box drawing and give it label information
+                print("detected")
+                for obj in detectedObjects {
+                    let bounds = obj.frame
+                    
+                    /// Perform bounding box resize
+                    let ratioX = self.camview.frame.width / imagei.size.width
+                    let ratioY = self.camview.frame.height / imagei.size.height
+                    let frameBound = CGRect(x: bounds.minX * ratioX,
+                                            y: bounds.minY * ratioY,
+                                            width: bounds.width * ratioX,
+                                            height: bounds.height * ratioY)
+                    
+                    self.highlightView.frame = frameBound
+                    if !self.hightlighting{
+                        self.highlightView.alpha = 0.4
+                        self.hightlighting = true
                     }
-                    self.currentTrackingID = trackingID
-                    print("Input image size: \(imagei.size) \n\nobj bounds: \(bounds) \nratio: \(ratio) \nframeBound: \(frameBound) \n\nDetected Object: \(String(describing: self.lbl.text))")
+                    
+                    /// Check for repeating object, skip labeler to save energy if same object in frame
+                    let trackingID = Int(truncating: obj.trackingID!)
+                    if self.currentTrackingID != trackingID {
+                        print("Running Labeler for ID \(trackingID)")
+                        /** Labeler - onDevice Vision API
+                         currently listing all results from onDevice Labeler for debug purpose,
+                         can switch to Cloud Vision API for more accurate label (Cost money)
+                        */
+                        let labeler = Vision.vision().onDeviceImageLabeler()
+                        labeler.process(image) { labels, error in
+                            guard error == nil, let labels = labels else { return }
+                            self.lbl.text = labels.first?.text
+                        }
+                        self.currentTrackingID = trackingID
+                    }
                 }
             }
         }
@@ -130,6 +159,56 @@ class ViewController: UIViewController,
          let cgImage:CGImage = context.createCGImage(cmage, from: cmage.extent)!
          let image:UIImage = UIImage.init(cgImage: cgImage)
          return image
+    }
+    
+    /// Helper function to convert UIImage to CVPixelBuffer
+    func buffer(from image: UIImage) -> CVPixelBuffer? {
+      let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue, kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue] as CFDictionary
+      var pixelBuffer : CVPixelBuffer?
+      let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(image.size.width), Int(image.size.height), kCVPixelFormatType_32ARGB, attrs, &pixelBuffer)
+      guard (status == kCVReturnSuccess) else {
+        return nil
+      }
+
+      CVPixelBufferLockBaseAddress(pixelBuffer!, CVPixelBufferLockFlags(rawValue: 0))
+      let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer!)
+
+      let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+      let context = CGContext(data: pixelData, width: Int(image.size.width), height: Int(image.size.height), bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer!), space: rgbColorSpace, bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
+
+      context?.translateBy(x: 0, y: image.size.height)
+      context?.scaleBy(x: 1.0, y: -1.0)
+
+      UIGraphicsPushContext(context!)
+      image.draw(in: CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height))
+      UIGraphicsPopContext()
+      CVPixelBufferUnlockBaseAddress(pixelBuffer!, CVPixelBufferLockFlags(rawValue: 0))
+
+      return pixelBuffer
+    }
+    
+    /// Helper function to crop image suitable for Core ML Input
+    func cropImageToBars(image: UIImage) -> UIImage {
+
+        let rect = CGRect(x: 0, y: 224, width: 224, height: 224)
+
+        UIGraphicsBeginImageContextWithOptions(rect.size, false, 0)
+        defer{
+          UIGraphicsEndImageContext()
+        }
+        flipContextVertically(contentSize: rect.size)
+
+        let cgImage = image.cgImage!.cropping(to: rect)!
+        return UIImage(cgImage: cgImage)
+    }
+    
+    /// Helper function to filp the UIGraphicsContext into correct orientation
+    func flipContextVertically(contentSize:CGSize){
+        var transform = CGAffineTransform.identity
+        transform = transform.scaledBy(x: 1, y: -1)
+        transform = transform.translatedBy(x: 0, y: -contentSize.height)
+
+        UIGraphicsGetCurrentContext()!.concatenate(transform)
     }
     
     /** Responsibile for the live video feed to work.
@@ -168,14 +247,11 @@ class ViewController: UIViewController,
         if session.canAddOutput(videoOutput) {
             session.addOutput(videoOutput)
         }
-
-        prevLayer = AVCaptureVideoPreviewLayer(session: session)
-        prevLayer.frame.size = view.frame.size
-        prevLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
         
-        view.layer.addSublayer(prevLayer!)
+        session.connections.forEach({$0.videoOrientation = .portrait})
+        
         highlightView.addSubview(lbl)
-        view.addSubview(highlightView)
+        camview.addSubview(highlightView)
         
         session.startRunning()
     }
@@ -188,14 +264,17 @@ class ViewController: UIViewController,
         highlightView.backgroundColor = .systemYellow
         highlightView.alpha = 0
         lbl = UILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 45))
+        lbl.backgroundColor = .white
+        lbl.textColor = .black
     }
     func setup(){
+        switchState = modelSwitch.isOn
         boundRatio = screenBound.width / screenBound.height
         let options = VisionObjectDetectorOptions()
         options.detectorMode = .stream
         options.shouldEnableMultipleObjects = false
         objectDetector = Vision.vision().objectDetector(options: options)
-        prevLayer?.frame.size = view.frame.size
+//        prevLayer?.frame.size = camview.frame.size
         createSession()
     }
     
