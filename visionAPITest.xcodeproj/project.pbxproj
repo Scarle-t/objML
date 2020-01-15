@@ -35,7 +35,7 @@
 
 /* Begin PBXFileReference section */
 		7A4533BFE5FC216BE1CD3E40 /* Pods-visionAPITest.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-visionAPITest.release.xcconfig"; path = "Target Support Files/Pods-visionAPITest/Pods-visionAPITest.release.xcconfig"; sourceTree = "<group>"; };
-		A60DC39D23CF9AF7004AA7EF /* Classifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = Classifier.mlmodel; path = "turicreate/coreml-training-tools-master/train-model/Classifier.mlmodel"; sourceTree = SOURCE_ROOT; };
+		A60DC39D23CF9AF7004AA7EF /* Classifier.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; name = Classifier.mlmodel; path = visionAPITest/Classifier.mlmodel; sourceTree = SOURCE_ROOT; };
 		A656509723CD04D9009DA780 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A6A2525E23C4DACD00CC37E5 /* visionAPITest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = visionAPITest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6A2526123C4DACD00CC37E5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
