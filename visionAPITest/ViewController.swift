@@ -25,11 +25,13 @@ class ViewController: UIViewController,
     //MARK: LET
     /// DispatchQueue, just like Thread
     let queue = DispatchQueue(label: "video-frame-sampler")
+    let objQueue = DispatchQueue(label: "objQueue")
     
     let model = Classifier()
     
     let screenBound = UIScreen.main.bounds
     let highlightView = UIView()
+    let croppedView = UIImageView()
     
     //MARK: VAR
     /// AVFoundation stuff
@@ -46,17 +48,23 @@ class ViewController: UIViewController,
     var count = 0
     var currentTrackingID = -1
     var hightlighting = false
-    var boundRatio = CGFloat.zero
-    var switchState = false
     
     //MARK: -
     //MARK: - IBOUTLET
-    @IBOutlet weak var modelSwitch: UISwitch!
     @IBOutlet weak var coreMLresult: UILabel!
     @IBOutlet weak var camview: UIImageView!
+    @IBOutlet weak var unfreezeBtn: UIButton!
     
     
     //MARK: - IBACTION
+    @IBAction func unfreeze(_ sender: UIButton) {
+        croppedView.alpha = 0
+        hightlighting = false
+        session.startRunning()
+        objQueue.async {
+            sleep(1)
+        }
+    }
     
     
     //MARK: - DELEGATION
@@ -72,33 +80,34 @@ class ViewController: UIViewController,
         
         DispatchQueue.main.async {
             self.camview.image = imagei
-            self.switchState = self.modelSwitch.isOn
         }
         
-        if switchState{
-            DispatchQueue.main.async {
-                self.highlightView.alpha = 0
-                self.coreMLresult.alpha = 1
-            }
-            let cropped = cropImageToBars(image: imagei)
-            let b = buffer(from: cropped)!
-            do{
-                let predict = try model.prediction(image: b)
-                DispatchQueue.main.async {
-                    self.coreMLresult.text = "Label: \(predict.label)\ncofidence: \( predict.labelProbability[predict.label]!)"
-                }
-            }catch{
-                print(error)
-            }
-        }else{
-            DispatchQueue.main.async {
-                self.coreMLresult.alpha = 0
-            }
-            /// Create a Google Vision API -compitable Image Format
+//        if switchState{
+//            DispatchQueue.main.async {
+//                self.highlightView.alpha = 0
+//                self.coreMLresult.alpha = 1
+//            }
+//            let cropped = cropImageToBars(image: imagei)
+//            let b = buffer(from: cropped)!
+//            do{
+//                let predict = try model.prediction(image: b)
+//                DispatchQueue.main.async {
+//                    self.coreMLresult.text = "Label: \(predict.label)\ncofidence: \( predict.labelProbability[predict.label]!)"
+//                }
+//            }catch{
+//                print(error)
+//            }
+        
+//        }else{
+//            DispatchQueue.main.async {
+        //                self.coreMLresult.alpha = 0
+        //            }
+        /// Create a Google Vision API -compitable Image Format
+        objQueue.async{
             let image = VisionImage(image: imagei)
             
             ///Object Detection and Tracking - onDevice Vision API
-            objectDetector.process(image) { detectedObjects, error in
+            self.objectDetector.process(image) { detectedObjects, error in
                 /// Error
                 guard error == nil else { return }
                 
@@ -106,12 +115,13 @@ class ViewController: UIViewController,
                 guard let detectedObjects = detectedObjects, !detectedObjects.isEmpty else {
                     print("Not detected")
                     self.hightlighting = false
-                    self.highlightView.alpha = 0
+                    self.croppedView.alpha = 0
                     return
                 }
                 
                 /// Object Found, perform bounding box drawing and give it label information
                 print("detected")
+                self.session.stopRunning()
                 for obj in detectedObjects {
                     let bounds = obj.frame
                     
@@ -123,11 +133,18 @@ class ViewController: UIViewController,
                                             width: bounds.width * ratioX,
                                             height: bounds.height * ratioY)
                     
-                    self.highlightView.frame = frameBound
-                    self.lbl.frame = CGRect(x: self.lbl.frame.minX, y: self.lbl.frame.minY, width: frameBound.width, height: self.lbl.frame.height)
+                    //                    self.highlightView.frame = frameBound
+                    //                    self.lbl.frame = CGRect(x: self.lbl.frame.minX, y: frameBound.minY - 45, width: frameBound.width, height: self.lbl.frame.height)
                     if !self.hightlighting{
-                        self.highlightView.alpha = 1
+                        self.croppedView.alpha = 1
                         self.hightlighting = true
+                    }
+                    
+                    let cropped = self.cropImageToBars(image: imagei, frame: bounds)
+                    let croppedVision = VisionImage(image: cropped)
+                    DispatchQueue.main.async {
+                        self.croppedView.image = cropped
+                        self.croppedView.frame = frameBound
                     }
                     
                     /// Check for repeating object, skip labeler to save energy if same object in frame
@@ -137,17 +154,19 @@ class ViewController: UIViewController,
                         /** Labeler - onDevice Vision API
                          currently listing all results from onDevice Labeler for debug purpose,
                          can switch to Cloud Vision API for more accurate label (Cost money)
-                        */
+                         */
                         let labeler = Vision.vision().onDeviceImageLabeler()
-                        labeler.process(image) { labels, error in
+                        labeler.process(croppedVision) { labels, error in
                             guard error == nil, let labels = labels else { return }
-                            self.lbl.text = labels.first?.text
+                            self.coreMLresult.text = labels.first?.text
                         }
                         self.currentTrackingID = trackingID
                     }
                 }
             }
         }
+        
+        //        }
     }
     
     //MARK: - OBJC FUNC
@@ -189,9 +208,9 @@ class ViewController: UIViewController,
     }
     
     /// Helper function to crop image suitable for Core ML Input
-    func cropImageToBars(image: UIImage) -> UIImage {
+    func cropImageToBars(image: UIImage, frame: CGRect = CGRect(x: 0, y: 224, width: 224, height: 224)) -> UIImage {
 
-        let rect = CGRect(x: 0, y: 224, width: 224, height: 224)
+        let rect = frame
 
         UIGraphicsBeginImageContextWithOptions(rect.size, false, 0)
         defer{
@@ -251,10 +270,10 @@ class ViewController: UIViewController,
         
         session.connections.forEach({$0.videoOrientation = .portrait})
         
-        highlightView.addSubview(lbl)
-        camview.addSubview(highlightView)
+//        highlightView.addSubview(lbl)
+        camview.addSubview(croppedView)
         
-        session.startRunning()
+//        session.startRunning()
     }
     
     //MARK: - VIEW ROUTINE
@@ -263,8 +282,6 @@ class ViewController: UIViewController,
     }
     func layout(){
         highlightView.backgroundColor = .clear
-        highlightView.layer.borderColor = UIColor.white.cgColor
-        highlightView.layer.borderWidth = 12
         highlightView.alpha = 0
         lbl = UILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 45))
         lbl.backgroundColor = .white
@@ -272,10 +289,14 @@ class ViewController: UIViewController,
         lbl.adjustsFontSizeToFitWidth = true
         lbl.minimumScaleFactor = 0.5
         lbl.textAlignment = .center
+        lbl.layer.cornerRadius = 7
+        croppedView.layer.cornerRadius = 12
+        croppedView.layer.borderWidth = 7
+        croppedView.layer.borderColor = UIColor.white.cgColor
+        croppedView.alpha = 0
+        croppedView.contentMode = .scaleAspectFill
     }
     func setup(){
-        switchState = modelSwitch.isOn
-        boundRatio = screenBound.width / screenBound.height
         let options = VisionObjectDetectorOptions()
         options.detectorMode = .stream
         options.shouldEnableMultipleObjects = false
