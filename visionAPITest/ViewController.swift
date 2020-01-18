@@ -124,8 +124,9 @@ class ViewController: UIViewController,
                                             height: bounds.height * ratioY)
                     
                     self.highlightView.frame = frameBound
+                    self.lbl.frame = CGRect(x: self.lbl.frame.minX, y: self.lbl.frame.minY, width: frameBound.width, height: self.lbl.frame.height)
                     if !self.hightlighting{
-                        self.highlightView.alpha = 0.4
+                        self.highlightView.alpha = 1
                         self.hightlighting = true
                     }
                     
@@ -261,11 +262,16 @@ class ViewController: UIViewController,
         
     }
     func layout(){
-        highlightView.backgroundColor = .systemYellow
+        highlightView.backgroundColor = .clear
+        highlightView.layer.borderColor = UIColor.white.cgColor
+        highlightView.layer.borderWidth = 12
         highlightView.alpha = 0
         lbl = UILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 45))
         lbl.backgroundColor = .white
         lbl.textColor = .black
+        lbl.adjustsFontSizeToFitWidth = true
+        lbl.minimumScaleFactor = 0.5
+        lbl.textAlignment = .center
     }
     func setup(){
         switchState = modelSwitch.isOn
