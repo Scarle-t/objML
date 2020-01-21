@@ -3,6 +3,9 @@
 
 *Some files are intentionally left out, this only contains the code of the app*
 
+# Documentation
+This Readme
+
 # Preparation
 **Hardware**
 - device with macOS (iMac, Macbook)
