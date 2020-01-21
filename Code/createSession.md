@@ -64,7 +64,8 @@ This long code is responsible for the live view we see on screen, and provide th
 Lets break this down.
 
 0. To get all this working, `AVFoundation` must be imported at the top first.
-1. In iOS, using camera and getting its data are managed by `AVCaptureSession` (simply called: `session`).
+1. In iOS, using camera and getting its data are managed by `AVCaptureSession` (simply called: `session`)
+![](https://i.imgur.com/kz0Mdqd.png)
 ```Swift
 /*Global, can pause the session somewhere within the class
 You can also do it in a single line if you don't plan to call it somewhere else
