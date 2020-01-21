@@ -4,7 +4,14 @@
 *Some files are intentionally left out, this only contains the code of the app*
 
 # Documentation
-This Readme
+**This Readme**
+    - Steps to create an enviroment for working with ML Kit
+    
+**Code/**
+    - Code explanation in depth, too long to fit inside a comment
+    
+**Extras/**
+    - Some extra stuff about how to train/ update CoreML models on device
 
 # Preparation
 **Hardware**
