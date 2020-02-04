@@ -51,9 +51,9 @@ User Interface | Storyboard
   - And leave these options unchecked
   - [ ] Use Core Data
   - [ ] Include Unit Test
-  - [ ] Include UI Tes
+  - [ ] Include UI Test
   
-    - When creating a new project, copy the Bundle ID from Firebase you created earlier.
+    - When creating a new project, make sure the BundleID display in XCode matches with Firebase.
     ![](https://i.imgur.com/AmO52sK.png)
   - Your project configuration will look like this
   ![](https://i.imgur.com/xhsG6bc.png)
