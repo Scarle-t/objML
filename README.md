@@ -75,7 +75,7 @@ User Interface | Storyboard
     pod 'Firebase/MLVisionLabelModel'
     pod 'Firebase/MLVisionObjectDetection'
     ```
-    - These are Pods for Google Firebase Vision API, including ML Kit Vision Image Label (Both on device and Cloud) and on device ML Kit Vision Object Detection. New pods can be added when needed using same method
+    - These are Pods for Google Firebase Vision API, including ML Kit Vision Image Label (Both on device and Cloud) and on device ML Kit Vision Object Detection. New pods can be added using the same method
     - Your nano will look like this
     -![](https://i.imgur.com/p8RZhsl.png)
     - Once finish, press control-O to write to file, Return to confirm and control-X to leave nano
@@ -95,7 +95,7 @@ User Interface | Storyboard
     ```Swift
     import Firebase
     ```
-    - Any other Swift file needs this line if Vision API if needed
+    - Any other Swift file needs this line if Vision API is needed
     - Then, inside the function
     ```Swift
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool
