@@ -29,8 +29,6 @@ class ViewController: UIViewController,
     
     let model = Classifier()
     
-    let screenBound = UIScreen.main.bounds
-    let highlightView = UIView()
     let croppedView = UIImageView()
     
     //MARK: VAR
@@ -51,13 +49,15 @@ class ViewController: UIViewController,
     
     //MARK: -
     //MARK: - IBOUTLET
-    @IBOutlet weak var coreMLresult: UILabel!
     @IBOutlet weak var camview: UIImageView!
     @IBOutlet weak var unfreezeBtn: UIButton!
+    @IBOutlet weak var actInd: UIActivityIndicatorView!
+    @IBOutlet weak var loadingView: UIView!
     
     
     //MARK: - IBACTION
     @IBAction func unfreeze(_ sender: UIButton) {
+        loadingView.alpha = 0
         croppedView.alpha = 0
         hightlighting = false
         session.startRunning()
@@ -82,69 +82,53 @@ class ViewController: UIViewController,
             self.camview.image = imagei
         }
         
-//        if switchState{
-//            DispatchQueue.main.async {
-//                self.highlightView.alpha = 0
-//                self.coreMLresult.alpha = 1
-//            }
-//            let cropped = cropImageToBars(image: imagei)
-//            let b = buffer(from: cropped)!
-//            do{
-//                let predict = try model.prediction(image: b)
-//                DispatchQueue.main.async {
-//                    self.coreMLresult.text = "Label: \(predict.label)\ncofidence: \( predict.labelProbability[predict.label]!)"
-//                }
-//            }catch{
-//                print(error)
-//            }
-        
-//        }else{
-//            DispatchQueue.main.async {
-        //                self.coreMLresult.alpha = 0
-        //            }
         /// Create a Google Vision API -compitable Image Format
-        objQueue.async{
-            let image = VisionImage(image: imagei)
+        
+        let image = VisionImage(image: imagei)
+        
+        ///Object Detection and Tracking - onDevice Vision API
+        self.objectDetector.process(image) { detectedObjects, error in
+            /// Error
+            guard error == nil else { return }
             
-            ///Object Detection and Tracking - onDevice Vision API
-            self.objectDetector.process(image) { detectedObjects, error in
-                /// Error
-                guard error == nil else { return }
-                
-                /// Not Detected, either object nolonger in sight or no recognizable object detected
-                guard let detectedObjects = detectedObjects, !detectedObjects.isEmpty else {
-                    print("Not detected")
-                    self.hightlighting = false
-                    self.croppedView.alpha = 0
-                    return
+            /// Not Detected, either object nolonger in sight or no recognizable object detected
+            guard let detectedObjects = detectedObjects, !detectedObjects.isEmpty else {
+                print("Not detected")
+                self.hightlighting = false
+                self.session.startRunning()
+                return
+            }
+            
+            /// Object Found, perform bounding box drawing and give it label information
+            print("detected")
+            self.objQueue.async{
+                DispatchQueue.main.async {
+                    self.loadingView.alpha = 0.3
                 }
-                
-                /// Object Found, perform bounding box drawing and give it label information
-                print("detected")
                 self.session.stopRunning()
                 for obj in detectedObjects {
                     let bounds = obj.frame
                     
                     /// Perform bounding box resize
-                    let ratioX = self.camview.frame.width / imagei.size.width
-                    let ratioY = self.camview.frame.height / imagei.size.height
-                    let frameBound = CGRect(x: bounds.minX * ratioX,
-                                            y: bounds.minY * ratioY,
-                                            width: bounds.width * ratioX,
-                                            height: bounds.height * ratioY)
-                    
-                    //                    self.highlightView.frame = frameBound
-                    //                    self.lbl.frame = CGRect(x: self.lbl.frame.minX, y: frameBound.minY - 45, width: frameBound.width, height: self.lbl.frame.height)
-                    if !self.hightlighting{
-                        self.croppedView.alpha = 1
-                        self.hightlighting = true
-                    }
                     
                     let cropped = self.cropImageToBars(image: imagei, frame: bounds)
                     let croppedVision = VisionImage(image: cropped)
                     DispatchQueue.main.async {
+                        let ratioX = self.camview.frame.width / imagei.size.width
+                        let ratioY = self.camview.frame.height / imagei.size.height
+                        let frameBound = CGRect(x: bounds.minX * ratioX,
+                                                y: bounds.minY * ratioY,
+                                                width: bounds.width * ratioX,
+                                                height: bounds.height * ratioY)
+                        
+                        if !self.hightlighting{
+                            self.croppedView.alpha = 1
+                            self.hightlighting = true
+                        }
                         self.croppedView.image = cropped
                         self.croppedView.frame = frameBound
+                        self.lbl.frame = CGRect(x: self.croppedView.frame.minX, y: self.croppedView.frame.minY, width: self.croppedView.frame.width, height: 30)
+                        self.loadingView.alpha = 0
                     }
                     
                     /// Check for repeating object, skip labeler to save energy if same object in frame
@@ -158,15 +142,13 @@ class ViewController: UIViewController,
                         let labeler = Vision.vision().onDeviceImageLabeler()
                         labeler.process(croppedVision) { labels, error in
                             guard error == nil, let labels = labels else { return }
-                            self.coreMLresult.text = labels.first?.text
+                            self.lbl.text = labels.first?.text
                         }
                         self.currentTrackingID = trackingID
                     }
                 }
             }
         }
-        
-        //        }
     }
     
     //MARK: - OBJC FUNC
@@ -270,10 +252,10 @@ class ViewController: UIViewController,
         
         session.connections.forEach({$0.videoOrientation = .portrait})
         
-//        highlightView.addSubview(lbl)
+        croppedView.addSubview(lbl)
         camview.addSubview(croppedView)
         
-//        session.startRunning()
+        session.startRunning()
     }
     
     //MARK: - VIEW ROUTINE
@@ -281,8 +263,6 @@ class ViewController: UIViewController,
         
     }
     func layout(){
-        highlightView.backgroundColor = .clear
-        highlightView.alpha = 0
         lbl = UILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 45))
         lbl.backgroundColor = .white
         lbl.textColor = .black
@@ -295,6 +275,8 @@ class ViewController: UIViewController,
         croppedView.layer.borderColor = UIColor.white.cgColor
         croppedView.alpha = 0
         croppedView.contentMode = .scaleAspectFill
+        unfreezeBtn.layer.cornerRadius = unfreezeBtn.frame.width / 2
+        actInd.layer.cornerRadius = 15
     }
     func setup(){
         let options = VisionObjectDetectorOptions()

@@ -10,5 +10,5 @@ target 'visionAPITest' do
   pod 'Firebase/MLVision'
   pod 'Firebase/MLVisionLabelModel'
   pod 'Firebase/MLVisionObjectDetection'
-  pod 'SVProgressHUD', :git => 'https://github.com/SVProgressHUD/SVProgressHUD.git'
+  pod 'SVProgressHUD'
 end

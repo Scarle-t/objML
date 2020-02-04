@@ -118,14 +118,14 @@ PODS:
   - nanopb/decode (0.3.9011)
   - nanopb/encode (0.3.9011)
   - Protobuf (3.11.2)
-  - SVProgressHUD (2.2.6)
+  - SVProgressHUD (2.2.5)
 
 DEPENDENCIES:
   - Firebase/Analytics
   - Firebase/MLVision
   - Firebase/MLVisionLabelModel
   - Firebase/MLVisionObjectDetection
-  - SVProgressHUD (from `https://github.com/SVProgressHUD/SVProgressHUD.git`)
+  - SVProgressHUD
 
 SPEC REPOS:
   trunk:
@@ -148,15 +148,7 @@ SPEC REPOS:
     - GTMSessionFetcher
     - nanopb
     - Protobuf
-
-EXTERNAL SOURCES:
-  SVProgressHUD:
-    :git: https://github.com/SVProgressHUD/SVProgressHUD.git
-
-CHECKOUT OPTIONS:
-  SVProgressHUD:
-    :commit: 4fdf3fdc8703fd9915dae33fc1363c604a06b24e
-    :git: https://github.com/SVProgressHUD/SVProgressHUD.git
+    - SVProgressHUD
 
 SPEC CHECKSUMS:
   Firebase: 0219bb4782eb1406f1b9b0628a2e625484ce910d
@@ -178,8 +170,8 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 43b8b64263023d4f32caa0b40f4c8bfa3c5f36d8
   nanopb: 18003b5e52dab79db540fe93fe9579f399bd1ccd
   Protobuf: dd1aaea7140debfe4dd0683fb8ef208e527ae153
-  SVProgressHUD: 6ed134667e9ebb2f33679e8273cd48fd3fa349e5
+  SVProgressHUD: 1428aafac632c1f86f62aa4243ec12008d7a51d6
 
-PODFILE CHECKSUM: ba60b2b63810c9712aeed9b58c4681c3703d5fca
+PODFILE CHECKSUM: ddbbbaf6c58a823702c9d49d4aedbbef37ed4adf
 
 COCOAPODS: 1.9.0.beta.2
