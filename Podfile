@@ -10,5 +10,4 @@ target 'visionAPITest' do
   pod 'Firebase/MLVision'
   pod 'Firebase/MLVisionLabelModel'
   pod 'Firebase/MLVisionObjectDetection'
-  pod 'SVProgressHUD'
 end
